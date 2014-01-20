@@ -1,0 +1,6 @@
+HOW TO SEARCH YOUTUBE
+=====================
+
+https://gdata.youtube.com/feeds/api/videos?q=Astral%20Projection%20Dancing
+
+This URL returns an XML, saved into yt-example.xml through 'tidy -xml -i'

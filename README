@@ -1,6 +1,14 @@
 HOW TO SEARCH YOUTUBE
 =====================
 
-https://gdata.youtube.com/feeds/api/videos?q=Astral%20Projection%20Dancing
+https://gdata.youtube.com/feeds/api/videos?q=Dancing%20Galaxy
 
-This URL returns an XML, saved into yt-example.xml through 'tidy -xml -i'
+This URL returns an XML containing hits for the term "Dancing Galaxy"
+which is searched for the title, the stream-URL and a small thumbnail.
+
+WHY CURL?
+=========
+
+u2b is extremely minimalistic to make it fast on the Raspberry Pi.
+The mere mention of `use LWP::Simple;` causes several seconds of compilation
+overhead at the beginning.

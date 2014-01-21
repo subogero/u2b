@@ -1,4 +1,8 @@
 #!/usr/bin/perl
+if ($ARGV[0] eq '-h') {
+    $html = 1;
+    shift;
+}
 $query = 'https://gdata.youtube.com/feeds/api/videos?q=';
 $query .= join '%20', @ARGV;
 $xml = `curl $query 2>/dev/null`;
@@ -12,6 +16,16 @@ while ($xml =~ m|^.*?<media:group>(.+?)</media:group>(.*)|s) {
     my $title = $1;
     $vid =~ m|<media:thumbnail url='([^']+?)' height='90'[^>]+?/>|;
     my $thumbnail = $1;
-    print "[$i]\ntitle=$title\nurl=$url\nthumbnail=$thumbnail\n";
+    if ($html) {
+        print <<EOF;
+<p>
+<a href="$url">$title</a>
+<br>
+<img src="$thumbnail"/>
+</p>
+EOF
+    } else {
+        print "[$i]\ntitle=$title\nurl=$url\nthumbnail=$thumbnail\n";
+    }
     $i++;
 }

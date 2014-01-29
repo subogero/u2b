@@ -1,3 +1,18 @@
+USAGE
+=====
+
+u2b [ -f <format> ] [words] | -h
+
+Search YouTube for words, print title, stream URL and thumbnail link of hits.
+The stream URL is directly playable by the Raspberry Pi's omxplayer.
+When words are omitted, a list of featured videos is printed.
+
+-h          Print this help text and exit
+-f <format> Supported formats are ini (default) and html
+
+In html format, each video has a stream link called its title, followed
+by a thumbnail image.
+
 HOW TO SEARCH YOUTUBE
 =====================
 
@@ -12,3 +27,5 @@ WHY CURL?
 u2b is extremely minimalistic to make it fast on the Raspberry Pi.
 The mere mention of `use LWP::Simple;` causes several seconds of compilation
 overhead at the beginning.
+
+curl also supports proxies, if the http_proxy environment variable is defined.

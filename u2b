@@ -1,12 +1,34 @@
 #!/usr/bin/perl
 # Copyright: SZABO Gergely <szg@subogero.com>, GNU GPL v2
 if ($ARGV[0] eq '-h') {
-    $html = 1;
-    shift;
+    print <<EOF;
+Usage: u2b [ -f <format> ] [words] | -h
+
+Search YouTube for words, print title, stream URL and thumbnail link of hits.
+The stream URL is directly playable by the Raspberry Pi's omxplayer.
+When words are omitted, a list of featured videos is printed.
+
+-h          Print this help text and exit
+-f <format> Supported formats are ini (default) and html
+
+In html format, each video has a stream link called its title, followed
+by a thumbnail image.
+EOF
+    exit 0;
 }
+
+# Format
+if ($ARGV[0] eq '-f') {
+    shift;
+    $format = shift;
+}
+
+# Query, URL-encoded
 $query = 'https://gdata.youtube.com/feeds/api/videos?q=';
 $query .= join '%20', @ARGV;
 $xml = `curl $query 2>/dev/null`;
+
+# Parse response XML
 $i = 0;
 while ($xml =~ m|^.*?<media:group>(.+?)</media:group>(.*)|s) {
     $xml = $2;
@@ -17,7 +39,7 @@ while ($xml =~ m|^.*?<media:group>(.+?)</media:group>(.*)|s) {
     my $title = $1;
     $vid =~ m|<media:thumbnail url='([^']+?)' height='90'[^>]+?/>|;
     my $thumbnail = $1;
-    if ($html) {
+    if ($format eq 'html') {
         print <<EOF;
 <p>
 <a href="$url">$title</a>

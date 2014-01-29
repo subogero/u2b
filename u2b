@@ -33,7 +33,7 @@ $i = 0;
 while ($xml =~ m|^.*?<media:group>(.+?)</media:group>(.*)|s) {
     $xml = $2;
     my $vid = $1;
-    $vid =~ m|<media:content url='([^']+?)'[^>]+?yt:format='6' ?/>|;
+    next unless $vid =~ m|<media:content url='([^']+?)'[^>]+?yt:format='6' ?/>|;
     my $url = $1;
     $vid =~ m|<media:title type='plain'>(.+?)</media:title>|;
     my $title = $1;

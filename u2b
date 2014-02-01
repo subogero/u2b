@@ -2,18 +2,30 @@
 # Copyright: SZABO Gergely <szg@subogero.com>, GNU GPL v2
 if ($ARGV[0] eq '-h') {
     print <<EOF;
-Usage: u2b [ -f <format> ] [words] | -h
+Usage:
+u2b -h
+u2b -u url
+u2b [ -f <format> ] [words]
 
 Search YouTube for words, print title, stream URL and thumbnail link of hits.
-The stream URL is directly playable by the Raspberry Pi's omxplayer.
 When words are omitted, a list of featured videos is printed.
+With -u option extract stream URL playable by the Raspberry Pi's omxplayer.
 
 -h          Print this help text and exit
+-u url      Print omxplayer-playable stream link for video URL
 -f <format> Supported formats are ini (default) and html
 
 In html format, each video has a stream link called its title, followed
 by a thumbnail image.
 EOF
+    exit 0;
+}
+
+# Extract stream URL
+if ($ARGV[0] eq '-u') {
+    shift;
+    my $url = shift;
+    print `youtube-dl -g $url`;
     exit 0;
 }
 
@@ -30,10 +42,10 @@ $xml = `curl $query 2>/dev/null`;
 
 # Parse response XML
 $i = 0;
-while ($xml =~ m|^.*?<media:group>(.+?)</media:group>(.*)|s) {
+while ($xml =~ m|^.*?<entry>(.+?)</media:group>(.*)|s) {
     $xml = $2;
     my $vid = $1;
-    next unless $vid =~ m|<media:content url='([^']+?)'[^>]+?yt:format='6' ?/>|;
+    next unless $vid =~ m|<link .+?href='([^']+?)&amp;|;
     my $url = $1;
     $vid =~ m|<media:title type='plain'>(.+?)</media:title>|;
     my $title = $1;

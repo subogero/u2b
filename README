@@ -1,13 +1,16 @@
 USAGE
 =====
 
-u2b [ -f <format> ] [words] | -h
+u2b -h
+u2b -u url
+u2b [ -f <format> ] [words]
 
 Search YouTube for words, print title, stream URL and thumbnail link of hits.
-The stream URL is directly playable by the Raspberry Pi's omxplayer.
 When words are omitted, a list of featured videos is printed.
+With -u option extract stream URL playable by the Raspberry Pi's omxplayer.
 
 -h          Print this help text and exit
+-u url      Print omxplayer-playable stream link for video URL
 -f <format> Supported formats are ini (default) and html
 
 In html format, each video has a stream link called its title, followed
@@ -19,7 +22,16 @@ HOW TO SEARCH YOUTUBE
 https://gdata.youtube.com/feeds/api/videos?q=Dancing%20Galaxy
 
 This URL returns an XML containing hits for the term "Dancing Galaxy"
-which is searched for the title, the stream-URL and a small thumbnail.
+which is searched for the title, the URL and a small thumbnail.
+
+EXTRACTING STREAM URL FOR OMXPLAYER
+===================================
+
+The command
+
+youtube-dl -g URL
+
+is used for this purpose. See https://github.com/rg3/youtube-dl
 
 WHY CURL?
 =========

@@ -1,6 +1,8 @@
 #!/usr/bin/perl
+use JSON::XS;
 # Copyright: SZABO Gergely <szg@subogero.com>, GNU GPL v2
-if ($ARGV[0] eq '-h') {
+sub search; sub print_html; sub print_json; sub print_yaml; sub print_ini;
+sub help {
     print <<EOF;
 Usage:
 u2b -h
@@ -13,13 +15,15 @@ With -u option extract stream URL playable by the Raspberry Pi's omxplayer.
 
 -h          Print this help text and exit
 -u url      Print omxplayer-playable stream link for video URL
--f <format> Supported formats are ini (default) and html
+-f <format> Supported formats are ini (default), json, yaml and html
 
 In html format, each video has a stream link called its title, followed
 by a thumbnail image.
 EOF
-    exit 0;
+    exit shift;
 }
+
+help 0 if $ARGV[0] eq '-h';
 
 # Extract stream URL
 if ($ARGV[0] eq '-u') {
@@ -35,32 +39,74 @@ if ($ARGV[0] eq '-f') {
     $format = shift;
 }
 
-# Query, URL-encoded
-$query = 'https://gdata.youtube.com/feeds/api/videos?q=';
-$query .= join '%20', @ARGV;
-$xml = `curl $query 2>/dev/null`;
+my @hits = search();
+if ($format eq 'html') {
+    print_html @hits;
+} elsif ($format eq 'json') {
+    print_json @hits;
+} elsif ($format eq 'yaml') {
+    print_yaml @hits;
+} else {
+    print_ini @hits;
+}
 
-# Parse response XML
-$i = 0;
-while ($xml =~ m|^.*?<entry>(.+?)</media:group>(.*)|s) {
-    $xml = $2;
-    my $vid = $1;
-    next unless $vid =~ m|<link .+?href='([^']+?)&amp;|;
-    my $url = $1;
-    $vid =~ m|<media:title type='plain'>(.+?)</media:title>|;
-    my $title = $1;
-    $vid =~ m|<media:thumbnail url='([^']+?)' height='90'[^>]+?/>|;
-    my $thumbnail = $1;
-    if ($format eq 'html') {
+# Query, URL-encoded
+sub search {
+    $query = 'https://gdata.youtube.com/feeds/api/videos?q=';
+    $query .= join '%20', @ARGV;
+    $xml = `curl $query 2>/dev/null`;
+
+    # Parse response XML
+    my @hits;
+    while ($xml =~ m|^.*?<entry>(.+?)</media:group>(.*)|s) {
+        $xml = $2;
+        my $vid = $1;
+        next unless $vid =~ m|<link .+?href='([^']+?)&amp;|;
+        my $url = $1;
+        $vid =~ m|<media:title type='plain'>(.+?)</media:title>|;
+        my $title = $1;
+        $vid =~ m|<media:thumbnail url='([^']+?)' height='90'[^>]+?/>|;
+        my $thumbnail = $1;
+        push @hits, { thumbnail => $thumbnail, title => $title, url => $url };
+    }
+    return @hits;
+}
+
+sub print_html {
+    foreach (@_) {
         print <<EOF;
 <p>
-<a href="$url">$title</a>
+<a href="$_->{url}">$_->{title}</a>
 <br>
-<img src="$thumbnail"/>
+<img src="$_->{thumbnail}"/>
 </p>
 EOF
-    } else {
-        print "[$i]\ntitle=$title\nurl=$url\nthumbnail=$thumbnail\n";
     }
-    $i++;
+}
+
+sub print_json {
+    print encode_json \@_;
+}
+
+sub print_yaml {
+    foreach (@_) {
+        print <<EOF;
+- thumbnail: $_->{thumbnail}
+  title: $_->{title}
+  url: $_->{url}
+EOF
+    }
+}
+
+sub print_ini {
+    $i = 0;
+    foreach (@_) {
+        print <<EOF;
+[$i]
+title=$_->{title}
+url=$_->{url}
+thumbnail=$_->{thumbnail}
+EOF
+        $i++;
+    }
 }

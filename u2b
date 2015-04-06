@@ -1,5 +1,6 @@
 #!/usr/bin/perl
 use JSON::XS;
+use URI::Escape;
 # Copyright: SZABO Gergely <szg@subogero.com>, GNU GPL v2
 sub search; sub print_html; sub print_json; sub print_yaml; sub print_ini;
 sub help {
@@ -14,6 +15,7 @@ When words are omitted, a list of featured videos is printed.
 With -u option extract stream URL playable by the Raspberry Pi's omxplayer.
 
 -h          Print this help text and exit
+-e          Extract 1st stream URL of 1st search hit
 -u url      Print omxplayer-playable stream link for video URL
 -f <format> Supported formats are ini (default), json, yaml and html
 
@@ -40,7 +42,14 @@ if ($ARGV[0] eq '-f') {
 }
 
 my @hits = search();
-if ($format eq 'html') {
+
+if ($ARGV[0] eq '-e') {
+    print_yaml @hits;
+    my $url = extract_stream($hits[0]->{name});
+    print $url;
+    system "curl -c jar -L '$url' >>fifo &";
+    system "omxplayer -ohdmi fifo";
+} elsif ($format eq 'html') {
     print_html @hits;
 } elsif ($format eq 'json') {
     print_json @hits;
@@ -67,16 +76,26 @@ sub search {
         my $title = $1;
         $vid =~ m|<media:thumbnail url='([^']+?)' height='90'[^>]+?/>|;
         my $thumbnail = $1;
-        push @hits, { thumbnail => $thumbnail, title => $title, url => $url };
+        push @hits, { thumbnail => $thumbnail, label => $title, name => $url };
     }
     return @hits;
+}
+
+sub extract_stream {
+    unlink 'jar';
+    my $html = `curl -c jar -L $_[0] 2>/dev/null`;
+    return unless $html =~ /url_encoded_fmt_stream_map":"(.+?)"/;
+    my @streams = split /,/, uri_unescape $1;
+    my @first = split /\\u0026/, $streams[0];
+    my ($url) = map { /^url=(.+)/ ? $1 : () } @first;
+    return $url;
 }
 
 sub print_html {
     foreach (@_) {
         print <<EOF;
 <p>
-<a href="$_->{url}">$_->{title}</a>
+<a href="$_->{name}">$_->{label}</a>
 <br>
 <img src="$_->{thumbnail}"/>
 </p>
@@ -89,11 +108,12 @@ sub print_json {
 }
 
 sub print_yaml {
+    print "---\n";
     foreach (@_) {
         print <<EOF;
-- thumbnail: $_->{thumbnail}
-  title: $_->{title}
-  url: $_->{url}
+- label: $_->{label}
+  name: $_->{name}
+  thumbnail: $_->{thumbnail}
 EOF
     }
 }
@@ -103,8 +123,8 @@ sub print_ini {
     foreach (@_) {
         print <<EOF;
 [$i]
-title=$_->{title}
-url=$_->{url}
+label=$_->{label}
+name=$_->{name}
 thumbnail=$_->{thumbnail}
 EOF
         $i++;

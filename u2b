@@ -1,8 +1,10 @@
 #!/usr/bin/perl
 use JSON::XS;
+use YAML;
 use URI::Escape;
 # Copyright: SZABO Gergely <szg@subogero.com>, GNU GPL v2
-sub search; sub print_html; sub print_json; sub print_yaml; sub print_ini;
+sub search; sub extract_streams;
+sub print_html; sub print_json; sub print_yaml; sub print_ini;
 sub help {
     print <<EOF;
 Usage:
@@ -41,11 +43,11 @@ if ($ARGV[0] eq '-f') {
     $format = shift;
 }
 
-my @hits = search();
+my @hits = search;
 
 if ($ARGV[0] eq '-e') {
-    print_yaml @hits;
-    my $url = extract_stream($hits[0]->{name});
+    my @streams = extract_streams $hits[0]->{name};
+    my $url = $streams[0]->{url};
     print $url;
     system "curl -c jar -L '$url' >>fifo &";
     system "omxplayer -ohdmi fifo";
@@ -64,7 +66,6 @@ sub search {
     $query = 'https://gdata.youtube.com/feeds/api/videos?q=';
     $query .= join '%20', @ARGV;
     $xml = `curl $query 2>/dev/null`;
-
     # Parse response XML
     my @hits;
     while ($xml =~ m|^.*?<entry>(.+?)</media:group>(.*)|s) {
@@ -81,16 +82,35 @@ sub search {
     return @hits;
 }
 
-sub extract_stream {
+# Extract stream URLs and metadata from a video HTML page:
+# Look for quoted string after "url_encoded_fmt_stream_map":
+# uri_unescape string
+# Comma-split for list of stream data (comma inside quote does not split)
+# Split each part by "\u0026" for url, itag, type, quality, fallback_host keys
+# Return list of parts, each a hashref of url, itag, type, quality
+sub extract_streams {
     unlink 'jar';
     my $html = `curl -c jar -L $_[0] 2>/dev/null`;
     return unless $html =~ /url_encoded_fmt_stream_map":"(.+?)"/;
-    my @streams = split /,/, uri_unescape $1;
-    my @first = split /\\u0026/, $streams[0];
-    my ($url) = map { /^url=(.+)/ ? $1 : () } @first;
-    return $url;
+    my $map = uri_unescape $1;
+    my ($stream, @streams);
+    while ($map) {
+        $stream .= $1 if $map =~ s/^([^,"]+)//;
+        $stream .= $1 if $map =~ s/^("[^"]+?")//;
+        if ($map eq '' || $map =~ s/^,//) {
+            push @streams, $stream;
+            $stream = '';
+        }
+    }
+    my @result;
+    foreach my $str (@streams) {
+        my %fields = map { split /=/, $_, 2 } split /\\u0026/, $str;
+        push @result, \%fields;
+    }
+    return @result;
 }
 
+# Pretty printers
 sub print_html {
     foreach (@_) {
         print <<EOF;
@@ -108,14 +128,7 @@ sub print_json {
 }
 
 sub print_yaml {
-    print "---\n";
-    foreach (@_) {
-        print <<EOF;
-- label: $_->{label}
-  name: $_->{name}
-  thumbnail: $_->{thumbnail}
-EOF
-    }
+    print Dump \@_;
 }
 
 sub print_ini {

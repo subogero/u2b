@@ -73,7 +73,7 @@ if ($video) {
     $search = '0s';
     $index = 0;
 }
-print "vid: $video, verb: $verb, search: $search, index: $index\n";
+#print "vid: $video, verb: $verb, search: $search, index: $index\n";
 
 my @hits = search $video || @ARGV;
 die "Not enough search hits for $index\n" if defined $index && $index >= @hits;
@@ -83,8 +83,8 @@ my %player_map = (
     l => 'omxplayer -olocal',
     h => 'omxplayer -ohdmi',
     I => 'omxd I',
-    J => 'omxd I',
-    H => 'omxd I',
+    J => 'omxd J',
+    H => 'omxd H',
     m => 'mplayer -fs',
 );
 if ($verb) {
@@ -98,8 +98,9 @@ if ($verb) {
     } elsif ($verb eq 'd') {
         system "curl -c jar -L '$url' >$vid.mp4";
     } elsif ($player_map{$verb}) {
+        -e 'fifo' and unlink 'fifo';
         system "mkfifo fifo";
-        system "curl -c jar -L '$url' >>fifo &";
+        system "curl -c jar -L '$url' >>fifo 2>/dev/null &";
         system "$player_map{$verb} fifo";
     } else {
         die "Verb $verb not mapped to any player";

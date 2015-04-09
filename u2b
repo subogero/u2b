@@ -1,4 +1,5 @@
 #!/usr/bin/perl
+use strict;
 use JSON::XS;
 use YAML;
 use URI::Escape;
@@ -8,64 +9,118 @@ sub print_html; sub print_json; sub print_yaml; sub print_ini;
 sub help {
     print <<EOF;
 Usage:
-u2b -h
-u2b -u url
-u2b [ -f <format> ] [words]
+u2b [options] [command] term
 
-Search YouTube for words, print title, stream URL and thumbnail link of hits.
-When words are omitted, a list of featured videos is printed.
-With -u option extract stream URL playable by the Raspberry Pi's omxplayer.
+u2b uWQU4hSFyhU   # Print page URL, thumbnail URL and title of video id
+u2b u uWQU4hSFyhU # Print URL of stream for video id
+u2b d uWQU4hSFyhU # Download video id
+u2b m uWQU4hSFyhU # Play video id via mplayer
+u2b s Foo         # Print info about search hits for Foo
+u2b 0s Foo        # Print info about 1st search hit for Foo
+u2b u0s Foo       # Print URL of stream for 1st search hit for Foo
+u2b d1s Foo       # Download 2nd search hit for Foo
+u2b m12s Foo      # Play 13th search hit for Foo
 
--h          Print this help text and exit
--e          Extract 1st stream URL of 1st search hit
--u url      Print omxplayer-playable stream link for video URL
--f <format> Supported formats are ini (default), json, yaml and html
+Fast YouTube search, download, play and stream-URL extractor utility.
+Playback is pluggable via config file .u2b.yml.
 
-In html format, each video has a stream link called its title, followed
-by a thumbnail image.
+The command has 3 optional parts:
+- one letter verb, just print info if omitted
+- number for selection from search hits, when using a search
+- s for search
+
+The term is either a YouTube video link, a video id, or a search term,
+the rest of the arguments is considered part of the search term.
+
+Verbs:
+u: extract directly playable stream URL
+d: download video, name it after 11-letter id
+l: play video via omxplayer -olocal
+h: play video via omxplayer -ohdmi
+I: play video via omxd I (default omxd audio output)
+J: play video via omxd I (jack)
+H: play video via omxd I (HDMI)
+m: play video via mplayer
+All upper/lowercase letters except u, d can be mapped to different players
+via config file .u2b.yml.
+
+Options:
+-f <format>  Choose print format from yaml (default), json, ini, html
 EOF
     exit shift;
 }
 
 help 0 if $ARGV[0] eq '-h';
 
-# Extract stream URL
-if ($ARGV[0] eq '-u') {
-    shift;
-    my $url = shift;
-    print `youtube-dl -g $url`;
-    exit 0;
-}
-
 # Format
+my $format = 'yaml';
 if ($ARGV[0] eq '-f') {
     shift;
     $format = shift;
 }
 
-my @hits = search;
+my ($verb, $video, $index, $search);
+if (@ARGV == 1) {
+    $video = shift;
+} else {
+    my $cmd = shift;
+    $cmd =~ /^([A-Za-z])((\d+)?s)?$/;
+    ($verb, $search, $index) = ($1, $2, $3);
+    $video = shift unless $search;
+}
+if ($video) {
+    $video =~ s/^.*(.{11})$/$1/; # Just leave id
+    $search = '0s';
+    $index = 0;
+}
+print "vid: $video, verb: $verb, search: $search, index: $index\n";
 
-if ($ARGV[0] eq '-e') {
-    my @streams = extract_streams $hits[0]->{name};
+my @hits = search $video || @ARGV;
+die "Not enough search hits for $index\n" if defined $index && $index >= @hits;
+@hits = ($hits[$index]) if defined $index;
+
+my %player_map = (
+    l => 'omxplayer -olocal',
+    h => 'omxplayer -ohdmi',
+    I => 'omxd I',
+    J => 'omxd I',
+    H => 'omxd I',
+    m => 'mplayer -fs',
+);
+if ($verb) {
+    $index = 0 unless defined $index;
+    my $vid = $hits[$index]->{name};
+    my @streams = extract_streams $vid;
+    $vid =~ s/^.*(.{11})$/$1/; # Just leave id
     my $url = $streams[0]->{url};
-    print $url;
-    system "curl -c jar -L '$url' >>fifo &";
-    system "omxplayer -ohdmi fifo";
+    if ($verb eq 'u') {
+        print $url;
+    } elsif ($verb eq 'd') {
+        system "curl -c jar -L '$url' >$vid.mp4";
+    } elsif ($player_map{$verb}) {
+        system "mkfifo fifo";
+        system "curl -c jar -L '$url' >>fifo &";
+        system "$player_map{$verb} fifo";
+    } else {
+        die "Verb $verb not mapped to any player";
+    }
 } elsif ($format eq 'html') {
     print_html @hits;
 } elsif ($format eq 'json') {
     print_json @hits;
 } elsif ($format eq 'yaml') {
     print_yaml @hits;
-} else {
+} elsif ($format eq 'ini') {
     print_ini @hits;
+} else {
+    help 1;
 }
 
 # Query, URL-encoded
 sub search {
-    $query = 'https://gdata.youtube.com/feeds/api/videos?q=';
-    $query .= join '%20', @ARGV;
-    $xml = `curl $query 2>/dev/null`;
+    my $query = 'https://gdata.youtube.com/feeds/api/videos?q=';
+    $query .= join '%20', @_;
+    my $xml = `curl $query 2>/dev/null`;
     # Parse response XML
     my @hits;
     while ($xml =~ m|^.*?<entry>(.+?)</media:group>(.*)|s) {
@@ -132,7 +187,7 @@ sub print_yaml {
 }
 
 sub print_ini {
-    $i = 0;
+    my $i = 0;
     foreach (@_) {
         print <<EOF;
 [$i]

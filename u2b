@@ -1,5 +1,6 @@
 #!/usr/bin/perl
 use strict;
+use warnings;
 use JSON::XS;
 use YAML;
 use URI::Escape;
@@ -59,13 +60,17 @@ if ($ARGV[0] eq '-f') {
     $format = shift;
 }
 
+# Verb, video, search terms
 my ($verb, $video, $index, $search);
 if (@ARGV == 1) {
     $video = shift;
 } else {
     my $cmd = shift;
-    $cmd =~ /^([A-Za-z])((\d+)?s)?$/;
-    ($verb, $search, $index) = ($1, $2, $3);
+    if ($cmd =~ /^([A-Za-z])?((\d+)?s)$/) {
+        ($verb, $search, $index) = ($1, $2, $3);
+    } else {
+        $verb = $cmd;
+    }
     $video = shift unless $search;
 }
 if ($video) {
@@ -75,10 +80,12 @@ if ($video) {
 }
 #print "vid: $video, verb: $verb, search: $search, index: $index\n";
 
+# Search
 my @hits = search $video || @ARGV;
 die "Not enough search hits for $index\n" if defined $index && $index >= @hits;
-@hits = ($hits[$index]) if defined $index;
+@hits = ($hits[$index]) if !$verb && defined $index;
 
+# Do verb or display data
 my %player_map = (
     l => 'omxplayer -olocal',
     h => 'omxplayer -ohdmi',

@@ -6,7 +6,7 @@ use YAML;
 use URI::Escape;
 # Copyright: SZABO Gergely <szg@subogero.com>, GNU GPL v2
 sub search; sub extract_streams;
-sub print_html; sub print_json; sub print_yaml; sub print_ini;
+sub print_html; sub print_json; sub print_yaml; sub print_ini; sub suffix;
 sub help {
     print <<EOF;
 Usage:
@@ -96,6 +96,8 @@ my %player_map = (
 );
 if ($verb) {
     $index = 0 unless defined $index;
+    my $txt = $hits[$index]->{label};
+    my $pic = $hits[$index]->{thumbnail};
     my $vid = $hits[$index]->{name};
     my @streams = extract_streams $vid;
     $vid =~ s/^.*(.{11})$/$1/; # Just leave id
@@ -103,7 +105,14 @@ if ($verb) {
     if ($verb eq 'u') {
         print $url;
     } elsif ($verb eq 'd') {
-        system "curl -c jar -L '$url' >$vid.mp4";
+        my $ext = $streams[0]->{extension};
+        system "curl -c jar -L '$url' >$vid.$ext";
+        (my $th_ext = $pic) =~ s/^.+\.//;
+        system "curl -c jar -L '$pic' >$vid.$th_ext";
+        if (open TXT, ">$vid.txt") {
+            print TXT "$txt\n";
+            close TXT;
+        }
     } elsif ($player_map{$verb}) {
         -e 'fifo' and unlink 'fifo';
         system "mkfifo fifo";
@@ -168,9 +177,19 @@ sub extract_streams {
     my @result;
     foreach my $str (@streams) {
         my %fields = map { split /=/, $_, 2 } split /\\u0026/, $str;
+        $fields{extension} = suffix $fields{itag};
         push @result, \%fields;
     }
     return @result;
+}
+
+# Map itag format ids to file extensions
+sub suffix {
+    my $itag = shift;
+    return $itag =~ /^(43|44|45|46)$/ ? 'webm'
+         : $itag =~ /^(18|22|37|38)$/ ? 'mp4'
+         : $itag =~ /^(13|17|36)$/    ? '3gp'
+         :                              'flv';
 }
 
 # Pretty printers

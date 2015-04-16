@@ -14,6 +14,7 @@ u2b [options] [command] term
 
 u2b uWQU4hSFyhU   # Print page URL, thumbnail URL and title of video id
 u2b u uWQU4hSFyhU # Print URL of stream for video id
+u2b a uWQU4hSFyhU # All info on all streams for video id
 u2b d uWQU4hSFyhU # Download video id
 u2b m uWQU4hSFyhU # Play video id via mplayer
 u2b s Foo         # Print info about search hits for Foo
@@ -104,6 +105,8 @@ if ($verb) {
     my $url = $streams[0]->{url};
     if ($verb eq 'u') {
         print $url;
+    } elsif ($verb eq 'a') {
+        print Dump \@streams;
     } elsif ($verb eq 'd') {
         my $ext = $streams[0]->{extension};
         system "curl -c jar -L '$url' >$vid.$ext";

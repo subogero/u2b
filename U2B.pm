@@ -1,4 +1,4 @@
-# Copyright: SZABO Gergely <szg@subogero.com>, GNU GPL v2
+# Copyright: SZABO Gergely <szg@subogero.com>, GNU LGPL v2.1
 package WWW::U2B;
 use strict;
 use warnings;

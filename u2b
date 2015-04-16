@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# Copyright: SZABO Gergely <szg@subogero.com>, GNU GPL v2
+# Copyright: SZABO Gergely <szg@subogero.com>, GNU LGPL v2.1
 use strict;
 use warnings;
 use JSON::XS;

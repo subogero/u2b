@@ -1,12 +1,12 @@
-Copyright (C) 2013 SZABO Gergely <szg@subogero.com> GNU GPL v2
+Copyright (C) 2015 SZABO Gergely <szg@subogero.com> GNU LGPL v2.1
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License version 2
-as published by the Free Software Foundation at
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation at
 
-http://www.gnu.org/licenses/gpl-2.0.html
+https://www.gnu.org/licenses/lgpl-2.1.html
 
-This program is distributed in the hope that it will be useful,
+This library is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.

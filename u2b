@@ -6,7 +6,8 @@ use YAML;
 use URI::Escape;
 # Copyright: SZABO Gergely <szg@subogero.com>, GNU GPL v2
 sub search; sub extract_streams;
-sub print_html; sub print_json; sub print_yaml; sub print_ini; sub suffix;
+sub print_html; sub print_json; sub print_yaml; sub print_ini;
+sub suffix; sub uid;
 sub help {
     print <<EOF;
 Usage:
@@ -75,7 +76,7 @@ if (@ARGV == 1) {
     $video = shift unless $search;
 }
 if ($video) {
-    $video =~ s/^.*(.{11})$/$1/; # Just leave id
+    $video = uid $video;
     $search = '0s';
     $index = 0;
 }
@@ -101,7 +102,7 @@ if ($verb) {
     my $pic = $hits[$index]->{thumbnail};
     my $vid = $hits[$index]->{name};
     my @streams = extract_streams $vid;
-    $vid =~ s/^.*(.{11})$/$1/; # Just leave id
+    $vid = uid $vid;
     my $url = $streams[0]->{url};
     if ($verb eq 'u') {
         print $url;
@@ -193,6 +194,12 @@ sub suffix {
          : $itag =~ /^(18|22|37|38)$/ ? 'mp4'
          : $itag =~ /^(13|17|36)$/    ? '3gp'
          :                              'flv';
+}
+
+sub uid {
+    my $url = shift;
+    (my $uid = $url) =~ s/^.*(.{11})$/$1/; # Just leave id
+    return $uid;
 }
 
 # Pretty printers

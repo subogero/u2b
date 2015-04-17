@@ -8,47 +8,8 @@ use WWW::U2B qw(search extract_streams uid);
 
 sub print_html; sub print_json; sub print_yaml; sub print_ini;
 sub help {
-    print <<EOF;
-Usage:
-u2b [options] [command] term
-
-u2b uWQU4hSFyhU   # Print page URL, thumbnail URL and title of video id
-u2b u uWQU4hSFyhU # Print URL of stream for video id
-u2b a uWQU4hSFyhU # All info on all streams for video id
-u2b d uWQU4hSFyhU # Download video id
-u2b m uWQU4hSFyhU # Play video id via mplayer
-u2b s Foo         # Print info about search hits for Foo
-u2b 0s Foo        # Print info about 1st search hit for Foo
-u2b u0s Foo       # Print URL of stream for 1st search hit for Foo
-u2b d1s Foo       # Download 2nd search hit for Foo
-u2b m12s Foo      # Play 13th search hit for Foo
-
-Fast YouTube search, download, play and stream-URL extractor utility.
-Playback is pluggable via config file .u2b.yml.
-
-The command has 3 optional parts:
-- one letter verb, just print info if omitted
-- number for selection from search hits, when using a search
-- s for search
-
-The term is either a YouTube video link, a video id, or a search term,
-the rest of the arguments is considered part of the search term.
-
-Verbs:
-u: extract directly playable stream URL
-d: download video, name it after 11-letter id
-l: play video via omxplayer -olocal
-h: play video via omxplayer -ohdmi
-I: play video via omxd I (default omxd audio output)
-J: play video via omxd I (jack)
-H: play video via omxd I (HDMI)
-m: play video via mplayer
-All upper/lowercase letters except u, d can be mapped to different players
-via config file .u2b.yml.
-
-Options:
--f <format>  Choose print format from yaml (default), json, ini, html
-EOF
+    print <<HELP;
+HELP
     exit shift;
 }
 

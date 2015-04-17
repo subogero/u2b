@@ -47,7 +47,7 @@ my @hits = search $video || @ARGV;
 die "Not enough search hits for $index\n" if defined $index && $index >= @hits;
 @hits = ($hits[$index]) if !$verb && defined $index;
 
-# Do verb or display data
+# Verb player mapping
 my %player_map = (
     l => 'omxplayer -olocal',
     h => 'omxplayer -ohdmi',
@@ -56,6 +56,14 @@ my %player_map = (
     H => 'omxd H',
     m => 'mplayer -fs',
 );
+my $cfg_player_map = eval { YAML::LoadFile '/etc/u2b.yml' };
+@player_map{keys %$cfg_player_map} = values %$cfg_player_map;
+$cfg_player_map = eval { YAML::LoadFile "$ENV{HOME}/.u2b.yml" };
+@player_map{keys %$cfg_player_map} = values %$cfg_player_map;
+$cfg_player_map = eval { YAML::LoadFile '.u2b.yml' };
+@player_map{keys %$cfg_player_map} = values %$cfg_player_map;
+
+# Do verb or display data
 if ($verb) {
     $index = 0 unless defined $index;
     my $txt = $hits[$index]->{label};
@@ -111,11 +119,11 @@ EOF
 }
 
 sub print_json {
-    print encode_json \@_;
+    print encode_json(\@_);
 }
 
 sub print_yaml {
-    print Dump \@_;
+    print Dump(\@_);
 }
 
 sub print_ini {

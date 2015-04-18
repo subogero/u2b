@@ -39,8 +39,11 @@ if (@ARGV == 1) {
     my $cmd = shift;
     if ($cmd =~ /^([A-Za-z])?((\d+)?s)$/) {
         ($verb, $search, $index) = ($1, $2, $3);
-    } else {
+    } elsif ($cmd =~ /^\w$/) {
         $verb = $cmd;
+    } else {
+        print "Invalid command '$cmd'\n";
+        help 1;
     }
     $video = shift unless $search;
 }

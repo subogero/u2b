@@ -70,7 +70,8 @@ sub suffix {
 
 sub uid {
     my $url = shift;
-    (my $uid = $url) =~ s/^.*(.{11})$/$1/; # Just leave id
+    my $uid = $url;
+    die "$url: no valid video URL or ID" unless $uid =~ s/^(.+=)?(.{11})$/$2/;
     return $uid;
 }
 

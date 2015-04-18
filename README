@@ -47,6 +47,8 @@ via config files /etc/u2b.yml, ~/.u2b.yml or .u2b.yml.
 ## OPTIONS
 
 -f <format>  Choose print format from yaml (default), json, ini, html
+-h           Print this help text and exit
+-v           Show u2b version
 .
 WWW::U2B
 ========

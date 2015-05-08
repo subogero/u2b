@@ -9,25 +9,36 @@ our @EXPORT_OK = qw(search extract_streams suffix uid);
 
 sub search; sub extract_streams; sub suffix; sub uid;
 
+my $base = 'https://www.youtube.com';
+
 # Query, URL-encoded
 sub search {
-    my $query = 'https://gdata.youtube.com/feeds/api/videos?q=';
-    $query .= join '%20', @_;
-    my $xml = `curl $query 2>/dev/null`;
-    # Parse response XML
-    my @hits;
-    while ($xml =~ m|^.*?<entry>(.+?)</media:group>(.*)|s) {
-        $xml = $2;
-        my $vid = $1;
-        next unless $vid =~ m|<link .+?href='([^']+?)&amp;|;
-        my $url = $1;
-        $vid =~ m|<media:title type='plain'>(.+?)</media:title>|;
-        my $title = $1;
-        $vid =~ m|<media:thumbnail url='([^']+?)' height='90'[^>]+?/>|;
-        my $thumbnail = $1;
-        push @hits, { thumbnail => $thumbnail, label => $title, name => $url };
+    my $url = "$base/results?search_query=" . join('+', @_);
+    my $resp = `curl $url 2>/dev/null`;
+    my @hits = $resp =~ /(href="\/watch.+?"|title="[^"]+?"|img src=".+?jpg")/g;
+    my %seen;
+    $seen{$_}++ foreach @hits;
+    @hits = grep { my $n = /watch/ ? 2 : 1; $seen{$_} == $n } @hits;
+    my @vids;
+    my $hit;
+    foreach (@hits) {
+        my ($key, $val) = /^(.+)="(.+)"/;
+        $key =~ s/=.+//;
+        if ($key eq 'href' && $val ne $hit->{$key}) {
+            if (keys %$hit) {
+                push @vids, {
+                    thumbnail => "https:$hit->{'img src'}",
+                    label => $hit->{title},
+                    name => "$base$hit->{href}",
+                }
+            }
+            $hit = {};
+            $hit->{$key} = $val;
+        }
+        next unless keys %$hit;
+        $hit->{$key} = $val unless $hit->{$key};
     }
-    return @hits;
+    return @vids;
 }
 
 # Extract stream URLs and metadata from a video HTML page:

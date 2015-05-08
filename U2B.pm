@@ -117,3 +117,70 @@ sub uid {
 }
 
 1;
+__END__
+
+=head1 NAME
+
+WWW:U2B - YouTube search, download, playback
+
+=head1 SYNOPSIS
+
+  use WWW::U2B qw(search extract_streams playback download uid);
+
+  my @hits = search qw(Foo Bar Baz);
+  my @streams = extract_streams $hits[0]->{name};
+  print $streams[0]->{url};
+  download $hits[0], $streams[0];
+  playback 'mplayer', $streams[0];
+
+=head1 DESCRIPTION
+
+This module provides YouTube search, download and playback without
+depending on the YouTube v2 or v3 API.
+
+=head1 DATA STRUCTURES
+
+=head2 Search hit
+
+Represents a YouTube video:
+  { name => page URL, label => title, thumbnail => thumbnail image URL }
+
+search() returns a list of these.
+extract_streams() and download() take one as parameter.
+
+=head2 Stream
+
+Represents a playable, downloadable video stream:
+  { url => x, itag => x, type => x, quality => x, extension => file ext }
+
+extract_streams() returns a list of these.
+download() and playback() take one as a parameter.
+
+=head1 FILES
+
+WWW::U2B must have write access to the currect dir of the using process
+to create some files.
+
+=head2 Temporary files
+
+  .u2bjar - cookie jar for YouTube
+  .u2bfifo - playback streams the video through this FIFO from curl
+
+The FIFO is necessary because not all players are able to use the cookie
+provided by YouTube.
+
+=head2 Downloaded files
+
+Named after the 11-character YouTube ID of the video:
+
+  xxxxxxxxxxx.yyy - the video file
+  xxxxxxxxxxx.jpg - thumbnail image
+  xxxxxxxxxxx.txt - contains the title of the video
+
+=head1 COPYRIGHT
+
+Copyright 2015 SZABO Gergely C<< <szg@subogero.com> >>
+
+License: GNU LGPL v2.1
+
+=cut

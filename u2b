@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use JSON::XS;
 use YAML;
-use WWW::U2B qw(search extract_streams uid);
+use WWW::U2B qw(search extract_streams playback download uid);
 
 sub print_html; sub print_json; sub print_yaml; sub print_ini;
 sub help {
@@ -78,30 +78,15 @@ $cfg_player_map = eval { YAML::LoadFile '.u2b.yml' };
 # Do verb or display data
 if ($verb) {
     $index = 0 unless defined $index;
-    my $txt = $hits[$index]->{label};
-    my $pic = $hits[$index]->{thumbnail};
-    my $vid = $hits[$index]->{name};
-    my @streams = extract_streams $vid;
-    $vid = uid $vid;
-    my $url = $streams[0]->{url};
+    my @streams = extract_streams $hits[$index]->{name};
     if ($verb eq 'u') {
-        print $url;
+        print $streams[0]->{url};
     } elsif ($verb eq 'a') {
         print Dump \@streams;
     } elsif ($verb eq 'd') {
-        my $ext = $streams[0]->{extension};
-        system "curl -c jar -L '$url' >$vid.$ext";
-        (my $th_ext = $pic) =~ s/^.+\.//;
-        system "curl -c jar -L '$pic' >$vid.$th_ext";
-        if (open TXT, ">$vid.txt") {
-            print TXT "$txt\n";
-            close TXT;
-        }
+        download $hits[$index], $streams[0];
     } elsif ($player_map{$verb}) {
-        -e 'fifo' and unlink 'fifo';
-        system "mkfifo fifo";
-        system "curl -c jar -L '$url' >>fifo 2>/dev/null &";
-        system "$player_map{$verb} fifo";
+        playback $player_map{$verb}, $streams[0];
     } else {
         die "Verb $verb not mapped to any player";
     }

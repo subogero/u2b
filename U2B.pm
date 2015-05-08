@@ -1,15 +1,16 @@
 # Copyright: SZABO Gergely <szg@subogero.com>, GNU LGPL v2.1
 package WWW::U2B;
 use strict;
-use warnings;
 use URI::Escape;
 
 use Exporter 'import';
-our @EXPORT_OK = qw(search extract_streams suffix uid);
+our @EXPORT_OK = qw(search extract_streams playback download suffix uid);
 
 sub search; sub extract_streams; sub suffix; sub uid;
 
 my $base = 'https://www.youtube.com';
+my $fifo = '.u2bfifo';
+my $jar = '.u2bjar';
 
 # Query, URL-encoded
 sub search {
@@ -46,10 +47,10 @@ sub search {
 # uri_unescape string
 # Comma-split for list of stream data (comma inside quote does not split)
 # Split each part by "\u0026" for url, itag, type, quality, fallback_host keys
-# Return list of parts, each a hashref of url, itag, type, quality
+# Return list of parts, each a hashref of url, itag, type, quality, extension
 sub extract_streams {
-    unlink 'jar';
-    my $html = `curl -c jar -L $_[0] 2>/dev/null`;
+    unlink $jar;
+    my $html = `curl -c $jar -L $_[0] 2>/dev/null`;
     return unless $html =~ /url_encoded_fmt_stream_map":"(.+?)"/;
     my $map = uri_unescape $1;
     my ($stream, @streams);
@@ -68,6 +69,35 @@ sub extract_streams {
         push @result, \%fields;
     }
     return @result;
+}
+
+# Playback an object returned by extract_streams
+sub playback {
+    my $player = shift;
+    my $stream = shift;
+    -e $fifo and unlink $fifo;
+    system "mkfifo $fifo" and die "Unable to create $fifo";
+    system "curl -c $jar -L '$stream->{url}' >>$fifo 2>/dev/null &";
+    system "$player $fifo";
+}
+
+# Download an object returned by extract_streams
+sub download {
+    my $video = shift;
+    my $stream = shift;
+    my $vid = uid $video->{name};
+    my $txt = $video->{label};
+    my $pic = $video->{thumbnail};
+    my $ext = $stream->{extension};
+    my $url = $stream->{url};
+    print "Downloading $vid.$ext - $txt\n";
+    system "curl -c jar -L '$url' >$vid.$ext";
+    (my $th_ext = $pic) =~ s/^.+\.//;
+    system "curl -c jar -L '$pic' >$vid.$th_ext 2>/dev/null";
+    if (open TXT, ">$vid.txt") {
+        print TXT "$txt\n";
+        close TXT;
+    }
 }
 
 # Map itag format ids to file extensions

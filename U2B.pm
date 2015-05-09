@@ -4,9 +4,9 @@ use strict;
 use URI::Escape;
 
 use Exporter 'import';
-our @EXPORT_OK = qw(search extract_streams playback download suffix uid);
+our @EXPORT_OK = qw(search extract_streams playback download uid);
 
-sub search; sub extract_streams; sub suffix; sub uid;
+sub search; sub extract_streams; sub _suffix; sub uid;
 
 my $base = 'https://www.youtube.com';
 my $fifo = '.u2bfifo';
@@ -65,7 +65,7 @@ sub extract_streams {
     my @result;
     foreach my $str (@streams) {
         my %fields = map { split /=/, $_, 2 } split /\\u0026/, $str;
-        $fields{extension} = suffix $fields{itag};
+        $fields{extension} = _suffix $fields{itag};
         push @result, \%fields;
     }
     return @result;
@@ -101,7 +101,7 @@ sub download {
 }
 
 # Map itag format ids to file extensions
-sub suffix {
+sub _suffix {
     my $itag = shift;
     return $itag =~ /^(43|44|45|46)$/ ? 'webm'
          : $itag =~ /^(18|22|37|38)$/ ? 'mp4'
@@ -138,23 +138,53 @@ WWW:U2B - YouTube search, download, playback
 This module provides YouTube search, download and playback without
 depending on the YouTube v2 or v3 API.
 
-=head1 DATA STRUCTURES
+=head1 DATA TYPES
 
-=head2 Search hit
+=head2 VID
 
-Represents a YouTube video:
+The URL of a YouTube video page
+
+=head2 UID
+
+The 11-character unique ID of a YouTube video.
+
+=head2 HIT
+
+Represents a search hit for a YouTube video:
   { name => page URL, label => title, thumbnail => thumbnail image URL }
 
-search() returns a list of these.
-extract_streams() and download() take one as parameter.
-
-=head2 Stream
+=head2 STREAM
 
 Represents a playable, downloadable video stream:
   { url => x, itag => x, type => x, quality => x, extension => file ext }
 
-extract_streams() returns a list of these.
-download() and playback() take one as a parameter.
+=head1 FUNCTIONS
+
+WWW::U2B exports none of its functions by default.
+
+=head2 search WORDS
+
+Takes a list of words as a search term, and returns a list of HITs.
+
+=head2 extract_streams HIT
+
+Takes a HIT, and returns a list of its STREAMS in different quality.
+
+=head2 playback PLAYER, STREAM
+
+Takes a player command and a STREAM, plays it back by streaming the STREAM
+via curl through FIFO .u2bfifo to the player.
+Dies if it's unable to create the FIFO.
+Returns the player's exit status.
+
+=head2 download VID, STREAM
+
+Downloads the chosen STREAM of VID. Creates 3 files, a video, a thumbnail
+and a txt file with the videos title. All named after the VID's 11-char UID.
+
+=head2 uid VID
+
+Returns the 11-char UID of a VID.
 
 =head1 FILES
 

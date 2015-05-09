@@ -3,7 +3,7 @@ u2b(1) --  YouTube search, download, info and playback
 
 ## USAGE
 
- u2b [options] command term
+ u2b [options] <command> <term>
 
  u2b <id>     # Print page URL, thumbnail URL and title of video id
  u2b u <id>   # Print URL of stream for video id
@@ -31,14 +31,14 @@ the rest of the arguments is considered part of the search term.
 
 ## VERBS
 
- u: extract directly playable stream URL
+ u: extract best quality directly playable stream URL
  a: all info on all streams for video id
  d: download video, name it after 11-letter id
  l: play video via omxplayer -olocal
  h: play video via omxplayer -ohdmi
  I: play video via omxd I (default omxd audio output)
- J: play video via omxd I (jack)
- H: play video via omxd I (HDMI)
+ J: play video via omxd J (jack)
+ H: play video via omxd H (HDMI)
  m: play video via mplayer
 
 All upper/lowercase letters except u, a, d can be mapped to different players
@@ -46,20 +46,23 @@ via config files /etc/u2b.yml, ~/.u2b.yml or .u2b.yml.
 
 ## OPTIONS
 
--f <format>  Choose print format from yaml (default), json, ini, html
--h           Print this help text and exit
--v           Show u2b version
+ -f <format>  Choose print format from yaml (default), json, ini, html
+ -h           Print this help text and exit
+ -v           Show u2b version
 .
 WWW::U2B
 ========
 
-A Perl library used by u2b to search videos and extract stream data for them.
+A Perl library used by u2b to abstract the intricacies of searching, extracting
+stream data, downloading and playback.
+
+See `perldoc WWW::U2B` after installation.
 
 WHY CURL?
 =========
 
 u2b is extremely minimalistic to make it fast on the Raspberry Pi.
-The mere mention of `use LWP::Simple;` causes several seconds of compilation
-overhead at the beginning.
+The mere mention of `use LWP::Simple;` causes seconds of compilation overhead
+at the beginning.
 
 curl also supports proxies, if the http_proxy environment variable is defined.

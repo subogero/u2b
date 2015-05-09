@@ -1,13 +1,13 @@
 .\" Generated with Ronnjs 0.3.8
 .\" http://github.com/kapouer/ronnjs/
 .
-.TH "U2B" "1" "April 2015" "" ""
+.TH "U2B" "1" "May 2015" "" ""
 .
 .SH "NAME"
 \fBu2b\fR \-\- YouTube search, download, info and playback
 .
 .SH "USAGE"
- u2b [options] command term
+ u2b [options] <command> <term>
 .
 .P
  u2b <id>     # Print page URL, thumbnail URL and title of video id
@@ -36,14 +36,14 @@ The term is either a YouTube video link, a video id, or a search term,
 the rest of the arguments is considered part of the search term\.
 .
 .SH "VERBS"
- u: extract directly playable stream URL
+ u: extract best quality directly playable stream URL
  a: all info on all streams for video id
  d: download video, name it after 11\-letter id
  l: play video via omxplayer \-olocal
  h: play video via omxplayer \-ohdmi
  I: play video via omxd I (default omxd audio output)
- J: play video via omxd I (jack)
- H: play video via omxd I (HDMI)
+ J: play video via omxd J (jack)
+ H: play video via omxd H (HDMI)
  m: play video via mplayer
 .
 .P
@@ -51,5 +51,7 @@ All upper/lowercase letters except u, a, d can be mapped to different players
 via config files /etc/u2b\.yml, ~/\.u2b\.yml or \.u2b\.yml\.
 .
 .SH "OPTIONS"
-\-f <format>  Choose print format from yaml (default), json, ini, html
+ \-f <format>  Choose print format from yaml (default), json, ini, html
+ \-h           Print this help text and exit
+ \-v           Show u2b version
 \|\.

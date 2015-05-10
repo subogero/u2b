@@ -16,7 +16,7 @@ HELP
 help 0 if $ARGV[0] eq '-h';
 if ($ARGV[0] eq '-v') {
     print <<'VERSION';
-u2b 0.0
+u2b 0.1
 
 Free software, distributed under the LGPL 2.1 license
 Copyright 2013-2015 SZABO Gergely <szg@subogero.com>

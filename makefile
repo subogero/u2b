@@ -87,7 +87,7 @@ debs:
 	echo                                                         >>$(DEB)/control
 	echo 'Package: u2b'                                          >>$(DEB)/control
 	echo 'Architecture: all'                                     >>$(DEB)/control
-	echo 'Depends: perl, curl, liburi-escape-perl,'              >>$(DEB)/control
+	echo 'Depends: perl, curl, liburi-perl,'                     >>$(DEB)/control
 	echo '  libjson-xs-perl, libyaml-perl'                       >>$(DEB)/control
 	echo "$$DESCR"                                               >>$(DEB)/control
 	grep Copyright u2b                               >$(DEB)/copyright

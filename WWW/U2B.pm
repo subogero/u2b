@@ -16,19 +16,21 @@ my $jar = '.u2bjar';
 sub search {
     my $url = "$base/results?search_query=" . join('+', @_);
     my $resp = `curl $url 2>/dev/null`;
-    my @hits = $resp =~ /(href="\/watch.+?"|title="[^"]+?"|img src=".+?jpg")/g;
+    my @hits = $resp =~ /(href="\/watch.+?"|title="[^"]+?"|(?:data-thumb|img [^>]*src)="[^"]+?jpg(?:[^"]*)")/g;
     my %seen;
     $seen{$_}++ foreach @hits;
     @hits = grep { my $n = /watch/ ? 2 : 1; $seen{$_} == $n } @hits;
     my @vids;
     my $hit;
     foreach (@hits) {
+        s/img [^>]*src/data-thumb/;
         my ($key, $val) = /^(.+)="(.+)"/;
         $key =~ s/=.+//;
+        $val =~ s/jpg\?.*/jpg/;
         if ($key eq 'href' && $val ne $hit->{$key}) {
             if (keys %$hit) {
                 push @vids, {
-                    thumbnail => "https:$hit->{'img src'}",
+                    thumbnail => "$hit->{'data-thumb'}",
                     label => $hit->{title},
                     name => "$base$hit->{href}",
                 }

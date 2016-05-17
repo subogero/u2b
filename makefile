@@ -12,12 +12,12 @@ install: README.help
 	perl -pe 'if (/^HELP/) { open R, "README.help"; print $$l while $$l=<R>; close R }' u2b >$(DESTDIR)/usr/bin/u2b
 	chmod +x $(DESTDIR)/usr/bin/u2b
 	# Copy the rest
-	[ -d $(DESTDIR)/usr/lib/perl5/WWW ] || mkdir -p $(DESTDIR)/usr/lib/perl5/WWW
-	cp U2B.pm $(DESTDIR)/usr/lib/perl5/WWW
+	[ -d $(DESTDIR)/usr/share/perl5/WWW ] || mkdir -p $(DESTDIR)/usr/share/perl5/WWW
+	cp WWW/U2B.pm $(DESTDIR)/usr/share/perl5/WWW
 	cp u2b.1 $(DESTDIR)/usr/share/man/man1/
 uninstall:
 	rm $(DESTDIR)/usr/bin/u2b
-	rm $(DESTDIR)/usr/lib/perl5/WWW/U2B.pm
+	rm $(DESTDIR)/usr/share/perl5/WWW/U2B.pm
 	rm $(DESTDIR)/usr/share/man/man1/u2b.1
 u2b.1: README.man
 	curl -F page=@README.man http://mantastic.herokuapp.com > u2b.1
@@ -104,7 +104,7 @@ debs:
 	echo '	dh $$@'          >> $(DEB)/rules
 	echo usr/bin             > $(DEB)/u2b.dirs
 	echo usr/share/man/man1 >> $(DEB)/u2b.dirs
-	echo usr/lib/perl5/lib  >> $(DEB)/u2b.dirs
+	echo usr/share/perl5/lib >> $(DEB)/u2b.dirs
 	chmod 755 $(DEB)/rules
 	mkdir -p $(DEB)/source
 	echo '3.0 (quilt)' > $(DEB)/source/format
